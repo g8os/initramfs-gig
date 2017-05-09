@@ -1,2 +1,2 @@
 # initramfs-gig
-GIG Extension for Initramfs
+GIG Extension for g8os/initramfs
