@@ -1,0 +1,68 @@
+--- a/init/do_mounts.c	2016-07-24 21:23:50.000000000 +0200
++++ b/init/do_mounts.c	2016-09-27 14:20:25.325143730 +0200
+@@ -33,6 +33,8 @@
+ #include <linux/nfs_fs_sb.h>
+ #include <linux/nfs_mount.h>
+ 
++#include <linux/efi.h>
++
+ #include "do_mounts.h"
+ 
+ int __initdata rd_doload;	/* 1 = load RAM disk, 0 = don't load */
+@@ -543,6 +545,47 @@
+ #endif
+ }
+ 
++static void secureboot_panic(char *str) {
++	printk(KERN_ERR "%s\n", str);
++	for(;;) { msleep(100); }
++}
++
++static void secureboot_check(void) {
++	struct efivar_entry *entry = kmalloc(sizeof(struct efivar_entry), GFP_KERNEL);
++	u8 val;
++	unsigned long size = sizeof(val);
++
++	static efi_char16_t const sb_var_name[] = {
++		'S', 'e', 'c', 'u', 'r', 'e', 'B', 'o', 'o', 't', 0
++	};
++	static efi_char16_t sm_var_name[] = {
++		'S', 'e', 't', 'u', 'p', 'M', 'o', 'd', 'e', 0
++	};
++	
++	//
++	// SetupMode
++	//
++	memcpy(entry->var.VariableName, sm_var_name, sizeof(sm_var_name));
++	entry->var.VendorGuid = EFI_GLOBAL_VARIABLE_GUID;
++	
++	if(efivar_entry_get(entry, 0, &size, &val) != EFI_SUCCESS)
++		secureboot_panic("SetupMode not found, boot not authorized.");
++	
++	if(val == 1)
++		secureboot_panic("SetupMode not in UserMode, boot not authorized.");
++	
++	//
++	// SecureBoot
++	//
++	memcpy(entry->var.VariableName, sb_var_name, sizeof(sm_var_name));
++	
++	if(efivar_entry_get(entry, 0, &size, &val) != EFI_SUCCESS)
++		secureboot_panic("SecureBoot not found, boot not authorized.");
++	
++	if(val == 0)
++		secureboot_panic("SecureBoot is not enabled, boot not authorized.");
++}
++
+ /*
+  * Prepare the namespace - decide what/where to mount, load ramdisks, etc.
+  */
+@@ -555,6 +598,8 @@
+ 		       root_delay);
+ 		ssleep(root_delay);
+ 	}
++	
++	secureboot_check();
+ 
+ 	/*
+ 	 * wait for the known devices to complete their probing
