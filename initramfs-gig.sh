@@ -17,7 +17,7 @@ fi
 if [ "${BUILDMODE}" = "release" ]; then
     echo "[+] patching kernel for secure boot restriction"
 
-    pushd "${WORKDIR}/linux-4.9.35/"
+    pushd "${WORKDIR}/linux-4.9.78/"
 
     if [ ! -f .patched_linux-secureboot-restriction.patch ]; then
         patch -p1 < "${GIGPATCHDIR}/linux-secureboot-restriction.patch"
