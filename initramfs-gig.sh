@@ -11,5 +11,5 @@ if [ "${BUILDMODE}" = "debug" ]; then
         curl -s https://github.com/${user}.keys >> "${ROOTDIR}"/root/.ssh/authorized_keys
     done
 
-    chmod 600 "${ROOTDIR}"/root/.ssh/authorized_keys
+    chmod -f 600 "${ROOTDIR}"/root/.ssh/authorized_keys
 fi
